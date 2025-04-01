@@ -1,0 +1,7 @@
+{
+    "type": "dashboard",
+    "attributes": {
+      "title": "Honeypot Attack Dashboard",
+      "panelsJSON": "[{\"type\":\"visualization\",\"id\":\"honeypot-attacks\"}]"
+    }
+  }
