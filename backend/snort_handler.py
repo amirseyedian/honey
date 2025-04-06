@@ -2,6 +2,7 @@ import os
 import time
 import json
 from elasticsearch import Elasticsearch
+from config import ELASTICSEARCH_HOST, ELASTICSEARCH_USER, ELASTICSEARCH_PASSWORD
 
 # Load environment variables
 ELASTICSEARCH_HOST = os.getenv("ELASTICSEARCH_HOST", "http://localhost:9200")

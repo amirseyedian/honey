@@ -1,0 +1,96 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: postgres_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - backend_network
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio_server
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - backend_network
+
+  redis:
+    image: redis:7
+    container_name: redis_cache
+    restart: unless-stopped
+    command: redis-server --bind 0.0.0.0
+    ports:
+      - "6379:6379"
+    networks:
+      - backend_network
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.5.0
+    container_name: elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-secret}
+      - xpack.security.enabled=${ELASTIC_SECURITY:-true}
+      - xpack.security.http.ssl.enabled=true
+      - xpack.security.http.ssl.verification_mode=none
+      - xpack.security.http.ssl.key=/usr/share/elasticsearch/config/cert/es01.key
+      - xpack.security.http.ssl.certificate=/usr/share/elasticsearch/config/cert/es01.crt
+      - xpack.security.http.ssl.certificate_authorities=/usr/share/elasticsearch/config/cert/ca/ca.crt
+      - xpack.security.transport.ssl.enabled=${ELASTIC_SECURITY:-true}
+      - xpack.security.transport.ssl.verification_mode=none
+      - xpack.security.transport.ssl.certificate_authorities=/usr/share/elasticsearch/config/cert/ca/ca.crt
+      - xpack.security.transport.ssl.certificate=/usr/share/elasticsearch/config/cert/es01.crt
+      - xpack.security.transport.ssl.key=/usr/share/elasticsearch/config/cert/es01.key
+    volumes:
+      - elastic_data:/usr/share/elasticsearch/data
+      - ./certs:/usr/share/elasticsearch/config/cert
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - elk_network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.5.0
+    container_name: kibana
+    restart: unless-stopped
+    depends_on:
+      - elasticsearch
+    environment:
+      - ELASTICSEARCH_HOSTS=https://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD:-secret}
+      - ELASTICSEARCH_SSL_VERIFICATIONMODE=none
+    ports:
+      - "5601:5601"
+    networks:
+      - elk_network
+
+networks:
+  backend_network:
+    driver: bridge
+  elk_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  minio_data:
+  elastic_data:
