@@ -5,27 +5,43 @@
 This project is a lightweight webserver honeypot framework integrated with Snort for intrusion detection and the ELK Stack for centralized logging and visualization. The system is designed to monitor and log malicious activity targeting exposed services while providing a modular and extensible backend.
 
 • HTTP webserver acting as a honeypot.
+
+
 • Snort for packet-level intrusion detection.
+
 • Elasticsearch for storing and indexing logs.
+
 • Kibana for visualizing honeypot and Snort events.
+
 • MinIO for file storage (optional if dealing with file captures).
+
 • FastAPI for internal APIs.
+
 • Log enrichment support (optional GeoIP).
 
 
 
 ### Features
 • Passive webserver honeypot logging suspicious HTTP requests.
+
 • Snort log parsing and integration.
+
 • Real-time log indexing to Elasticsearch.
+
 • Full visualization dashboard using Kibana.
+
 • Clean project structure with separate modules for parsing, storage, and enrichment.
+
 • Optional GeoIP enrichment for external IPs.
+
 • Modular thread-based execution system for honeypot, Snort, and enrichment tasks.
 ### Requirements
 • Python 3.10
+
 • Snort installed and configured
+
 • Elasticsearch and Kibana (self-hosted or via Docker)
+
 ## Installation and Deployment
 
 ### Prepare backend applications
@@ -104,8 +120,8 @@ pip install -r requirements
 python honey.py
 ```
 Honeypot server will be online on port 8080
-#### Optinal
-You can setup a reverse proxy line nginx for better performance
+#### Optional
+You can setup a reverse proxy like nginx for better performance
 
 ## Access monitoring dashboard
 
