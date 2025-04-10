@@ -1,3 +1,4 @@
+import subprocess
 from elasticsearch import Elasticsearch
 from config import ELASTICSEARCH_HOST, ELASTICSEARCH_USER, ELASTICSEARCH_PASSWORD
 
@@ -26,7 +27,7 @@ class ElasticHandler:
                     },
                     "source_ip": { "type": "ip" },
                     "destination_ip": { "type": "ip" },
-                "location": { "type": "geo_point" },  # ✅ Required for Kibana Maps
+                "location": { "type": "geo_point" },  #  Required for Kibana Maps
                     "timestamp": { "type": "date" },
                     "host": { "type": "keyword" },
                     "user_agent": { "type": "keyword" },
@@ -62,3 +63,19 @@ class ElasticHandler:
         if index not in [HONEYPOT_INDEX, SNORT_INDEX]:
             raise ValueError("Invalid index name!")
         self.es.index(index=index, document=data)
+
+
+
+# Inside ElasticHandler class:
+    def store_log(self, index, data):
+        """Insert log into the specified Elasticsearch index"""
+        if index not in [HONEYPOT_INDEX, SNORT_INDEX]:
+            raise ValueError("Invalid index name!")
+        
+        self.es.index(index=index, document=data)
+
+        # Run the IP location enrichment module after adding the log
+        try:
+            subprocess.run(["python", "-m", "backend.enrich.iploc"], check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"[ERROR] Failed to run enrichment script: {e}")
