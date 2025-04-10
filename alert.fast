@@ -1,9 +1,2 @@
 04/09-13:50:51.486183  [**] [1:1421:11] SNMP AgentX/tcp request [**] [Classification: Attempted Information Leak] [Priority: 2] {TCP} 10.10.1.116:40104 -> 10.10.1.103:705
 04/09-13:50:51.516078  [**] [1:1418:11] SNMP request tcp [**] [Classification: Attempted Information Leak] [Priority: 2] {TCP} 10.10.1.116:40104 -> 10.10.1.103:161
-04/09-13:50:51.486183  [**] [1:1421:11] SNMP AgentX/tcp request [**] [Classification: Attempted Information Leak] [Priority: 2] {TCP} 10.10.1.116:40104 -> 10.10.1.103:705
-04/09-13:50:51.516078  [**] [1:1418:11] SNMP request tcp [**] [Classification: Attempted Information Leak] [Priority: 2] {TCP} 10.10.1.116:40104 -> 10.10.1.103:161
-04/09-13:50:51.486183  [**] [1:1421:11] SNMP AgentX/tcp request [**] [Classification: Attempted Information Leak] [Priority: 2] {TCP} 10.10.1.116:40104 -> 10.10.1.103:705
-04/09-13:50:51.516078  [**] [1:1418:11] SNMP request tcp [**] [Classification: Attempted Information Leak] [Priority: 2] {TCP} 10.10.1.116:40104 -> 10.10.1.103:161
-
-04/09-13:50:51.486183  [**] [1:1421:11] SNMP AgentX/tcp request [**] [Classification: Attempted Information Leak] [Priority: 2] {TCP} 10.10.1.116:40104 -> 10.10.1.103:705
-04/09-13:50:51.516078  [**] [1:1418:11] SNMP request tcp [**] [Classification: Attempted Information Leak] [Priority: 2] {TCP} 10.10.1.116:40104 -> 10.10.1.103:161

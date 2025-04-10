@@ -61,7 +61,7 @@ class SnortHandler:
     def parse_logs(self):
         try:
             with open(self.log_path, "r") as f:
-                f.seek(0, os.SEEK_END)  # Start at end of file
+                f.seek(0, os.SEEK_END)
 
                 while True:
                     line = f.readline()
