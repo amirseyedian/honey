@@ -16,24 +16,7 @@ def start_honeypot():
 
 def start_snort_monitoring():
     snort_handler = SnortHandler()
-    snort_handler.parse_logs()  # Blocking call (already looped internally)
-
-def watch_and_enrich_ip():
-    global latest_processed_timestamp
-
-    while True:
-        latest_doc = es_handler.get_latest_doc(HONEYPOT_INDEX)  # Only honeypot logs
-
-        if latest_doc:
-            doc_id = latest_doc["_id"]
-            doc_time = latest_doc["_source"].get("timestamp")
-            ip = latest_doc["_source"].get("ip")
-
-            if doc_time and ip and latest_processed_timestamp != doc_time:
-                enrich_ip(ip, doc_id, HONEYPOT_INDEX)
-                latest_processed_timestamp = doc_time
-
-        time.sleep(3)
+    snort_handler.parse_logs()  # Blocking call
 
 if __name__ == "__main__":
     # Thread: Webserver honeypot
@@ -41,9 +24,6 @@ if __name__ == "__main__":
 
     # Thread: Snort monitoring
     t2 = threading.Thread(target=start_snort_monitoring)
-
-    # Thread: Enrich IP logs with geolocation
-    t3 = threading.Thread(target=watch_and_enrich_ip)
 
     t1.start()
     t2.start()

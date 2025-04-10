@@ -43,12 +43,23 @@ def is_private_ip(ip):
         return False
 
 # === Enrich with GeoIP Data ===
-def enrich_ip(ip, reader):
+reader_instance = None  # Global fallback
+
+def enrich_ip(ip, reader=None):
+    global reader_instance
+
+    if reader is None:
+        if reader_instance is None:
+            download_geoip_db()
+            reader_instance = geoip2.database.Reader(GEOIP_DB_PATH)
+        reader = reader_instance
+
     if is_private_ip(ip):
         return {
             "city": "Local/Private",
-            "location": None  # No geo_point for private IPs
+            "location": None
         }
+
     try:
         response = reader.city(ip)
         return {
@@ -61,7 +72,6 @@ def enrich_ip(ip, reader):
         }
     except:
         return "Unknown"
-
 # === Enrich Documents ===
 def enrich_documents(reader):
     results = helpers.scan(

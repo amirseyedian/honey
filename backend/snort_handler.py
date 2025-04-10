@@ -1,7 +1,11 @@
 import os
 import time
+import re
+from datetime import datetime
+
 from backend.elastic_handler import ElasticHandler
 from config import SNORT_LOG_PATH
+from backend.enrich.iploc import enrich_ip  # Optional inline enrichment
 
 HONEYPOT_SNORT_INDEX = "snort-logs"
 
@@ -9,32 +13,46 @@ class SnortHandler:
     def __init__(self):
         self.es_handler = ElasticHandler()
         self.log_path = SNORT_LOG_PATH or "/var/log/snort/alert.fast"
-        self.last_inode = None
         print(f"[+] Initialized SnortHandler watching: {self.log_path}")
 
     def parse_alert_line(self, line):
         try:
-            # Typical Snort fast alert format parsing
-            parts = line.split("] [**] ")
-            if len(parts) < 2:
+            # Regex to extract relevant parts
+            regex = (
+                r"(?P<timestamp>\d{2}/\d{2}-\d{2}:\d{2}:\d{2}\.\d+)\s+"
+                r"\[\*\*\] \[(?P<sid>[\d:]+)\] (?P<request_type>.*?) \[\*\*\] "
+                r"\[Classification: (?P<classification>.*?)\] "
+                r"\[Priority: (?P<priority>\d+)\] "
+                r"\{(?P<protocol>\w+)\} (?P<src_ip>[\d\.]+):(?P<src_port>\d+) -> (?P<dst_ip>[\d\.]+):(?P<dst_port>\d+)"
+            )
+
+            match = re.search(regex, line)
+            if not match:
                 return None
 
-            alert_info = parts[1].split(" [**]")[0]
-            meta_data = parts[-1].strip()
+            data = match.groupdict()
 
-            meta_parts = meta_data.split(" ")
-            timestamp = meta_parts[0]
-            src_ip, src_port = meta_parts[1].split(":")
-            dst_ip, dst_port = meta_parts[3].split(":")
+            # Convert timestamp to ISO format (e.g. 2025-04-01T13:50:51.486Z)
+            timestamp = datetime.strptime(data["timestamp"], "%m/%d-%H:%M:%S.%f")
+            now = datetime.now()
+            timestamp = timestamp.replace(year=now.year)  # Assume current year
+            data["timestamp"] = timestamp.isoformat()
 
-            return {
-                "timestamp": timestamp,
-                "alert": alert_info,
-                "source_ip": src_ip,
-                "source_port": src_port,
-                "destination_ip": dst_ip,
-                "destination_port": dst_port
-            }
+            # Optional IP Enrichment (comment out if not needed inline)
+            src_geo = enrich_ip(data["src_ip"])
+            dst_geo = enrich_ip(data["dst_ip"])
+
+            if isinstance(src_geo, dict):
+                data["src_city"] = src_geo.get("city")
+                data["src_country"] = src_geo.get("country")
+                data["src_location"] = src_geo.get("location")
+
+            if isinstance(dst_geo, dict):
+                data["dst_city"] = dst_geo.get("city")
+                data["dst_country"] = dst_geo.get("country")
+                data["dst_location"] = dst_geo.get("location")
+
+            return data
 
         except Exception as e:
             print(f"[!] Failed to parse alert line: {e}")
@@ -43,8 +61,7 @@ class SnortHandler:
     def parse_logs(self):
         try:
             with open(self.log_path, "r") as f:
-                # Seek to end of file
-                f.seek(0, os.SEEK_END)
+                f.seek(0, os.SEEK_END)  # Start at end of file
 
                 while True:
                     line = f.readline()
