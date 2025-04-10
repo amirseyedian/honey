@@ -26,15 +26,15 @@ class ElasticHandler:
                     },
                     "source_ip": { "type": "ip" },
                     "destination_ip": { "type": "ip" },
+                "location": { "type": "geo_point" },  # ✅ Required for Kibana Maps
                     "timestamp": { "type": "date" },
                     "host": { "type": "keyword" },
                     "user_agent": { "type": "keyword" },
                     "accept": { "type": "keyword" },
                     "accept_language": { "type": "keyword" },
                     "connection": { "type": "keyword" },
-                    "content_type": { "type": "keyword" },
-                    # Add other header fields as necessary
-                    "timestamp": { "type": "date" }
+                "content_type": { "type": "keyword" }
+                # Add more explicitly mapped fields here as needed
                 },
                 "dynamic_templates": [
                     {

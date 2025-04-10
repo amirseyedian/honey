@@ -2,6 +2,7 @@ from elasticsearch import Elasticsearch, helpers
 import geoip2.database
 import os
 import requests
+import ipaddress
 
 from config import ELASTICSEARCH_HOST, ELASTICSEARCH_USER, ELASTICSEARCH_PASSWORD
 
@@ -33,11 +34,31 @@ def download_geoip_db():
             print(f"[✗] Error downloading GeoLite2-City: {e}")
             exit(1)
 
-# === Get City from IP ===
-def get_city(ip, reader):
+# === Detect Private/Local IP ===
+def is_private_ip(ip):
+    try:
+        ip_obj = ipaddress.ip_address(ip)
+        return ip_obj.is_private or ip_obj.is_loopback
+    except ValueError:
+        return False
+
+# === Enrich with GeoIP Data ===
+def enrich_ip(ip, reader):
+    if is_private_ip(ip):
+        return {
+            "city": "Local/Private",
+            "location": None  # No geo_point for private IPs
+        }
     try:
         response = reader.city(ip)
-        return response.city.name or "Unknown"
+        return {
+            "city": response.city.name or "Unknown",
+            "country": response.country.name or "Unknown",
+            "location": {
+                "lat": response.location.latitude,
+                "lon": response.location.longitude
+            }
+        }
     except:
         return "Unknown"
 
@@ -61,18 +82,23 @@ def enrich_documents(reader):
         if not ip or "location" in source:
             continue
 
-        city = get_city(ip, reader)
-        print(f"[+] Enriching {ip} → {city}")
+        geo_data = enrich_ip(ip, reader)
+
+        doc_update = {
+            "location": geo_data["location"],
+            "city": geo_data["city"]
+        }
+
+        if geo_data.get("country"):
+            doc_update["country"] = geo_data["country"]
+
+        print(f"[+] Enriching {ip} → {geo_data}")
 
         actions.append({
             "_op_type": "update",
             "_index": INDEX_NAME,
             "_id": doc_id,
-            "doc": {
-                "location": {
-                    "city": city
-                }
-            }
+            "doc": doc_update
         })
 
         if len(actions) >= 500:
@@ -82,7 +108,7 @@ def enrich_documents(reader):
     if actions:
         helpers.bulk(es, actions)
 
-    print("[✓] City enrichment complete.")
+    print("[✓] IP enrichment complete.")
 
 # === Main ===
 if __name__ == "__main__":
