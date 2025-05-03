@@ -134,3 +134,56 @@ curl -X POST "http://localhost:5601/api/kibana/dashboards/import?exclude=index-p
   --data-binary "@dashboards/dashboard.json"
 ```
 Login and Open Dashboards and Refresh
+## Snort Installation and configuration
+
+Install snort IDS/IPS tool
+```sh
+sudo apt install snort
+```
+
+After installtion enable service
+```sh
+sudo systemctl enable snort
+```
+link snort alert log file to the alert file in project root
+```sh
+sudo ln /var/log/snort/snort.alert.fast /home/<your-user>/honey/alert.fast
+```
+Now any new alert/log will be synced to the alert file in honey root directory
+
+### Snort Inline Mode (IPS) Setup
+
+To enable Snort to actively block malicious traffic (IPS mode), follow these steps:
+1.	Ensure NFQUEUE support is available:
+
+```sh
+snort --daq-list | grep nfq
+```
+
+You should see: nfq(v3): NFQ packet acquisition module
+
+2.	Add iptables rules to send traffic to NFQUEUE:
+```sh
+sudo iptables -I INPUT -p tcp --dport 80 -j NFQUEUE --queue-num 0
+sudo iptables -I OUTPUT -p tcp --sport 80 -j NFQUEUE --queue-num 0
+```
+
+3.	Change rule keyword from Alert to Drop, Add a drop rule in /etc/snort/rules/custom.rules:
+
+For example: To block access to HTTP port 80
+```drop tcp any any -> any 80 (msg:"[TEST] Blocked HTTP"; sid:1000001; rev:1;)```
+
+
+4.	Edit snort.conf to include your local rules:
+Make sure this line is uncommented:
+
+>include $RULE_PATH/local.rules
+
+5.	Run Snort in inline mode:
+
+```sh
+sudo snort -Q --daq nfq --daq-var queue=0 -c /etc/snort/snort.conf
+```
+
+
+Snort will now inspect and drop matching packets according to your rules.
